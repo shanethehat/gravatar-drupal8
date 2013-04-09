@@ -34,6 +34,11 @@ You will also want to make sure user pictures are enabled for your theme at
 admin/appearance/settings and the approprate user roles have the 'use gravatar'
 permission assigned to them at admin/people/permissions.
 
+Gravatar support is implemented as a field formatter for the user profile image, 
+so you must select the Gravatar formatter for the user profile field at 
+admin/config/people/accounts/display/. You must also ensure that the image style 
+is set to "None (Original Image)".
+
 
 FREQUENTLY ASKED QUESTIONS
 --------------------------
