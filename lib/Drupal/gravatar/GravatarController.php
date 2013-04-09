@@ -8,11 +8,19 @@
 namespace Drupal\gravatar;
 
 use Symfony\Component\DependencyInjection\ContainerAware;
+use Drupal\Core\Config\Config;
 
 /**
  * Gravatar module URL endpoints
  */
 class GravatarController extends ContainerAware {
+  
+  /**
+   * Gravatar config object
+   * 
+   * @var Drupal\Core\Config\Config 
+   */
+  protected $config;
     
   /**
    * Gravatar administrative settings form
@@ -39,6 +47,9 @@ class GravatarController extends ContainerAware {
   * @param type  $form_state
   */
   public function buildForm($form, $form_state) {
+    
+    $config = $this->getConfig();
+    
     // Display settings.
     $form['display'] = array(
       '#type'        => 'fieldset',
@@ -48,7 +59,7 @@ class GravatarController extends ContainerAware {
       '#type'          => 'item',
       '#title'         => t('Image size'),
       '#description'   => t('The preferred image size (maximum @max pixels). This setting can be adjusted in the <a href="@user-picture-link">user pictures settings</a>.', array('@max' => GRAVATAR_SIZE_MAX, '@user-picture-link' => url('admin/config/people/accounts', array('fragment' => 'edit-user-picture-default')))),
-      '#value'         => t('@sizex@size pixels', array('@size' => _gravatar_get_size())),
+      '#value'         => t('@sizex@size pixels', array('@size' => Gravatar::getSize($config))),
     );
     $form['display']['gravatar_rating'] = array(
       '#type'          => 'select',
@@ -60,7 +71,7 @@ class GravatarController extends ContainerAware {
         t('X: May contain hardcore sexual imagery or extremely disturbing violence.'),
       ))),
       '#options'       => drupal_map_assoc(array('G', 'PG', 'R', 'X')),
-      '#default_value' => gravatar_var('rating'),
+      '#default_value' => $config->get('gravatar_rating'),
     );
     $form['display']['gravatar_default'] = array(
       '#type'          => 'radios',
@@ -75,7 +86,7 @@ class GravatarController extends ContainerAware {
         GRAVATAR_DEFAULT_MONSTERID => t('Gravatar.com monsterid (generated)'),
         GRAVATAR_DEFAULT_LOGO => t('Gravatar.com logo'),
       ),
-      '#default_value' => gravatar_var('default'),
+      '#default_value' => $config->get('gravatar_default'),
       '#field_prefix' => '<div class="picture js-show">' . theme('image', array('path' => '', 'alt' => t('Default picture example'), 'title' => t('Default picture example'), 'attributes' => array('id' => 'gravatar-imagepreview'), 'getsize' => FALSE)) . '</div>',
       '#process' => array('form_process_radios', array($this,'gravatar_process_default_setting')),
     );
@@ -95,18 +106,23 @@ class GravatarController extends ContainerAware {
     $form['advanced']['gravatar_url'] = array(
       '#type' => 'textfield',
       '#title' => t('Gravatar URL'),
-      '#default_value' => GRAVATAR_URL,
+      '#default_value' => $config->get('gravatar_url'),
     );
     $form['advanced']['gravatar_url_ssl'] = array(
       '#type' => 'textfield',
       '#title' => t('Gravatar secure URL'),
-      '#default_value' => GRAVATAR_URL_SSL,
+      '#default_value' => $config->get('gravatar_url_ssl'),
     );
 
-    return system_settings_form($form);
+    $system_form = system_settings_form($form);
+    //echo '<pre>'; var_dump($system_form); exit;
+    return $system_form;
   }
 
   public function gravatar_process_default_setting($element) {
+    
+    $config = $this->getConfig();
+    
     $element[GRAVATAR_DEFAULT_GLOBAL]['#description'] = t('This setting can be adjusted in the <a href="@user-picture-link">user pictures settings</a>.', array('@user-picture-link' => url('admin/config/people/accounts', array('fragment' => 'edit-user-picture-default'))));
     // If the global user picture is empty, disable the respective option.
     if (!variable_get('user_picture_default', '')) {
@@ -117,7 +133,7 @@ class GravatarController extends ContainerAware {
     foreach ($element['#options'] as $key => $choice) {
       // Add an image to preview this default image option.
       $options = array(
-        'path' =>  gravatar_get_gravatar(mt_rand(), array('default' => _gravatar_get_default_image($key), 'size' => 80)),
+        'path' =>  Gravatar::getPath(mt_rand(), $config, array('default' => Gravatar::getDefaultImage($key, $config), 'size' => 80)),
         'alt' => $choice,
         'title' => $choice,
         'attributes' => array(
@@ -131,5 +147,17 @@ class GravatarController extends ContainerAware {
     }
 
     return $element;
+  }
+  
+  /**
+   * Lazy load and return the gravatar config object
+   * 
+   * @return Drupal\Core\Config\Config
+   */
+  protected function getConfig() {
+    if (null === $this->config) {
+      $this->config = config('gravatar.settings');
+    }
+    return $this->config;
   }
 }
