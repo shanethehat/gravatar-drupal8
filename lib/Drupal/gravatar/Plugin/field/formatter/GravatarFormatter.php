@@ -56,7 +56,7 @@ class GravatarFormatter extends ImageFormatter {
         continue;
       }
       foreach ($items[$uid] as &$item) {
-        $item = $this->getGravaterItem($entity);
+        $item = $this->getGravatarItem($entity);
       }
     }
     
