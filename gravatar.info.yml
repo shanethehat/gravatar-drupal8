@@ -1,0 +1,8 @@
+name: Gravatar
+description: "Integrate Gravatar pictures registered at Gravatar.com in Drupal sites"
+core: 8.x
+#files:
+# - gravatar.module
+# - gravatar.install
+# - gravatar.admin.inc
+configure: admin/config/people/gravatar

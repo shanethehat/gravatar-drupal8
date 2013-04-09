@@ -1,0 +1,6 @@
+gravatar_settings:
+  pattern: 'admin/config/people/gravatar'
+  defaults:
+    _content: '\Drupal\gravatar\GravatarController::settings'
+  requirements:
+    _permission: 'administer gravatar'
