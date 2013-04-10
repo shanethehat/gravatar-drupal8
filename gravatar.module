@@ -87,6 +87,7 @@ function gravatar_help($path, $arg) {
 function gravatar_menu() {
   $items['admin/config/people/gravatar'] = array(
     'title' => 'Gravatar',
+    'route_name' => 'gravatar_settings',
     'description' => 'Administer Gravatar integration.',
     'access arguments' => array('administer gravatar'),
   );

@@ -2,18 +2,17 @@
 
 /**
  * @file
- * Defines Drupal\gravatar\GravatarController
+ * Defines Drupal\gravatar\GravatarSettingsForm
  */
 
 namespace Drupal\gravatar;
 
-use Symfony\Component\DependencyInjection\ContainerAware;
-use Drupal\Core\Config\Config;
+use Drupal\system\SystemConfigFormBase;
 
 /**
  * Gravatar module URL endpoints
  */
-class GravatarController extends ContainerAware {
+class GravatarSettingsForm extends SystemConfigFormBase {
   
   /**
    * Gravatar config object
@@ -21,32 +20,21 @@ class GravatarController extends ContainerAware {
    * @var Drupal\Core\Config\Config 
    */
   protected $config;
-    
+  
   /**
-   * Gravatar administrative settings form
+   * Implements \Drupal\Core\Form\FormInterface::getFormID().
    */
-  public function settings() {
-    // To display a form, we'd normally use drupal_get_form(). But to use a
-    // method instead of a function as the callback, this pattern is used.
-    // Borrowed from \Drupal\block\BlockListController::render().
-    // @todo Once http://drupal.org/node/1903176 is committed, use this:
-    //   return drupal_get_callback_form('gravatar_settings_form', array($this, 'buildForm'));
-    $form_state = array();
-    $form_state['build_info']['args'] = array();
-    $form_state['build_info']['callback'] = array($this, 'buildForm');
-    
-    return drupal_build_form('gravatar_settings_form', $form_state);
+  public function getFormID() {
+    return 'gravatar_settings';
   }
+
   
  /** 
   * Administration settings form.
   *
-  * @see system_settings_form()
-  * 
-  * @param array $form Form configuration
-  * @param type  $form_state
+  * Implements \Drupal\Core\Form\FormInterface::buildForm().
   */
-  public function buildForm($form, $form_state) {
+  public function buildForm(array $form, array &$form_state) {
     
     $config = $this->getConfig();
     
@@ -59,7 +47,7 @@ class GravatarController extends ContainerAware {
       '#type'          => 'item',
       '#title'         => t('Image size'),
       '#description'   => t('The preferred image size (maximum @max pixels). This setting can be adjusted in the <a href="@user-picture-link">user pictures settings</a>.', array('@max' => GRAVATAR_SIZE_MAX, '@user-picture-link' => url('admin/config/people/accounts', array('fragment' => 'edit-user-picture-default')))),
-      '#value'         => t('@sizex@size pixels', array('@size' => Gravatar::getSize($config))),
+      '#value'         => t('@sizex@size', array('@size' => Gravatar::getSize($config))),
     );
     $form['display']['gravatar_rating'] = array(
       '#type'          => 'select',
@@ -114,11 +102,10 @@ class GravatarController extends ContainerAware {
       '#default_value' => $config->get('gravatar_url_ssl'),
     );
 
-    $system_form = system_settings_form($form);
-    //echo '<pre>'; var_dump($system_form); exit;
-    return $system_form;
+    return parent::buildForm($form, $form_state);
   }
 
+  
   public function gravatar_process_default_setting($element) {
     
     $config = $this->getConfig();
@@ -150,13 +137,40 @@ class GravatarController extends ContainerAware {
   }
   
   /**
+   * Implements \Drupal\Core\Form\FormInterface::validateForm().
+   */
+  public function validateForm(array &$form, array &$form_state) {
+    
+    // @todo
+
+    parent::validateForm($form, $form_state);
+  }
+  
+  /**
+   * Implements \Drupal\Core\Form\FormInterface::submitForm().
+   */
+  public function submitForm(array &$form, array &$form_state) {
+    $values = $form_state['values'];
+    
+    $this->getConfig()
+      ->set('gravatar_size', $values['gravatar_size'])
+      ->set('gravatar_rating', $values['gravatar_rating'])
+      ->set('gravatar_default', $values['gravatar_default'])
+      ->set('gravatar_url', $values['gravatar_url'])
+      ->set('gravatar_url_ssl', $values['gravatar_url_ssl'])
+      ->save();
+    
+    parent::submitForm($form, $form_state);
+  }
+  
+  /**
    * Lazy load and return the gravatar config object
    * 
    * @return Drupal\Core\Config\Config
    */
   protected function getConfig() {
     if (null === $this->config) {
-      $this->config = config('gravatar.settings');
+      $this->config = $this->configFactory->get('gravatar.settings');
     }
     return $this->config;
   }

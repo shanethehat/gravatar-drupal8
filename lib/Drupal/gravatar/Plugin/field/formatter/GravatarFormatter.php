@@ -35,6 +35,7 @@ class GravatarFormatter extends ImageFormatter {
    * Implements \Drupal\field\Plugin\Type\Formatter\FormatterInterface::prepareView().
    */
   public function prepareView(array $entities, $langcode, array &$items) {
+  
     parent::prepareView($entities, $langcode, $items);
     
     //echo '<pre>'; var_dump($items); exit;
